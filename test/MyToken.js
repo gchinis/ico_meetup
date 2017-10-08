@@ -18,11 +18,11 @@ contract('MyToken', function(accounts) {
         expect(symbol).to.equal('Amal');
     });
 
-    it('should put 10000 MyTokens in the first account', () => {
+    it('should put 10% of MyTokens in the first account', () => {
         return MyToken.deployed().then(function(instance) {
             return instance.balanceOf(accounts[0]);
         }).then(function(balance) {
-            assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
+            assert.equal(balance.valueOf(), 1000, "1000 wasn't in the first account");
         });
     });
 
@@ -45,30 +45,12 @@ contract('MyToken', function(accounts) {
         });
     });
 
-    describe('#transferOwnership', () => {
-        it('should let the owner call transferownership',  () => {
-            const ownerAccount = accounts[0];
-
-            return MyToken.deployed()
-                .then(myToken => myToken.transferOwnership(ownerAccount, {from: ownerAccount}))
-        });
-
-        it('should fail if anyone but the owner calls transferownership',  (done) => {
-            const anAccount = accounts[1];
-
-            MyToken.deployed()
-                .then(myToken => myToken.transferOwnership(anAccount, {from: anAccount}))
-                .then(() => done('The transferOwnership must fail because sender is not the onwer.'))
-                .catch(e => done());
-        });
-
-    });
 
     describe('#transfer', () => {
         it('should transfer tokens', async () => {
             const fromAccount = accounts[0];
             const toAccount = accounts[1];
-            const amount = 1000;
+            const amount = 300;
 
             let fromStartingBalance;
             let toStartingBalance;
@@ -101,7 +83,7 @@ contract('MyToken', function(accounts) {
         it('should publish a Transfer event', async () => {
             const fromAccount = accounts[0];
             const toAccount = accounts[1];
-            const amount = 1000;
+            const amount = 500;
 
             const myToken = await MyToken.deployed();
             const transferWatcher = myToken.Transfer();
@@ -142,91 +124,7 @@ contract('MyToken', function(accounts) {
         })
     });
 
-    describe('#freezeAccount', () => {
-        it('should mark an account as frozen', async () => {
-            const someAccount = accounts[3];
-            const ownerAccount = accounts[0];
 
-            const myToken = await MyToken.deployed();
-
-            const startingFreezeStatus = await myToken.frozenAccount(someAccount);
-            // noinspection BadExpressionStatementJS
-            expect(startingFreezeStatus).to.be.false;
-
-            myToken.freezeAccount(someAccount, true, { from: ownerAccount });
-
-            const endingFreezeStatus = await myToken.frozenAccount(someAccount);
-            expect(endingFreezeStatus).to.be.true;
-        });
-
-        it('should publish a FrozenFunds event', async () => {
-            const someAccount = accounts[3];
-            const ownerAccount = accounts[0];
-
-            const myToken = await MyToken.deployed();
-            const frozenFundsWatcher = myToken.FrozenFunds();
-
-            await myToken.freezeAccount(someAccount, true, { from: ownerAccount });
-
-            const [event, ] = frozenFundsWatcher.get();
-
-            expect(event.args.target).to.equal(someAccount);
-            expect(event.args.frozen).to.be.true;
-        });
-    });
-
-    describe('#mintToken', () => {
-        it('should give the new tokens to the given account', async () => {
-            const ownerAccount = accounts[0];
-            const toAccount = accounts[1];
-            const amount  = 25000;
-
-            const myToken = await MyToken.deployed();
-
-            const toStartingBalance = await myToken.balanceOf(toAccount);
-            await myToken.mintToken(toAccount, amount, {from: ownerAccount});
-            const toEndingBalance = await myToken.balanceOf(toAccount);
-
-            expect(toEndingBalance.toNumber()).to.equal(toStartingBalance.toNumber() + amount);
-
-        });
-
-        it('should increase the total supply', async () => {
-            const ownerAccount = accounts[0];
-            const toAccount = accounts[1];
-            const amount  = 25000;
-
-            const myToken = await MyToken.deployed();
-
-            const startingTotalSupply = await myToken.totalSupply();
-            await myToken.mintToken(toAccount, amount, {from: ownerAccount});
-            const endingTotalSupply = await myToken.totalSupply();
-
-            expect(endingTotalSupply.toNumber()).to.equal(startingTotalSupply.toNumber() + amount);
-        });
-
-        it('should publish Transfer events', async () => {
-            const ownerAccount = accounts[0];
-            const toAccount = accounts[1];
-            const amount  = 25000;
-
-            const myToken = await MyToken.deployed();
-            const transferWatcher = myToken.Transfer();
-
-            await myToken.mintToken(toAccount, amount, {from: ownerAccount});
-
-            const [event1, event2] = transferWatcher.get();
-
-            expect(event1.args.from).to.equal('0x0000000000000000000000000000000000000000');
-            expect(event1.args.to).to.equal(ownerAccount);
-            expect(event1.args.value.toNumber()).to.equal(amount);
-
-            expect(event2.args.from).to.equal(ownerAccount);
-            expect(event2.args.to).to.equal(toAccount);
-            expect(event2.args.value.toNumber()).to.equal(amount);
-
-        })
-    });
 
     // describe('#buy', () => {
     //     it('should give the user tokens', async () => {
